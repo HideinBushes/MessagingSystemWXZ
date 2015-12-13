@@ -21,12 +21,14 @@
 //Client member function
 using namespace std;
 
+void header();
+void line();
 
 class Client {
 private:
     int sockfd;
     int portNum;
-    string username; 
+    //string username; 
     struct sockaddr_in server_addr;
     const char* IP;
 public:
@@ -39,25 +41,6 @@ public:
     static void str_send(int sockfd);
     static void str_recieve(int sockfd);
     void login_info(string username);
-};
-
-//Server member function
-class Server{
-private:
-    int listenfd, connfd;
-    int portNum;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t size;
-public:
-    Server(int portNum);
-    void server_addr_init();
-    void bind_listen();
-    int accept_client();
-    void closelisten();
-    void closeconnect();
-    static void str_echo(int sockfd); // string echo
-    static void str_read(int sockfd); // string read
-    static void str_write(int sockfd); // string write
 };
 
 

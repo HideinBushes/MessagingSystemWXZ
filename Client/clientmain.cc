@@ -1,21 +1,21 @@
 #include "package.hpp"
 
+string myname;
 
 
 int main(){
-	cout<< "\n-->Messaging System \n";
-	cout<<"-->Login...\n";
-	cout<<"-->Username: ";
-	string username;
-	cin>>username;
+    header();
+	cin>>myname;
+	line();
     int sockfd ;
       //username there is a map in server, map[string username, int sockfd
-    Client c1(1510, "127.0.0.1");
+    Client c1(1510, "155.246.84.36");
     c1.clientinit();
     c1.clientconn();
     sockfd = c1.get_sockfd();
-    c1.login_info(username);
-    
+
+    c1.login_info(myname);  
+
     thread t1_send(Client::str_send, sockfd);
     thread t1_recieve(Client::str_recieve, sockfd);
 

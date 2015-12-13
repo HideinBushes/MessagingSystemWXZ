@@ -2,16 +2,19 @@
 using namespace std;
 
 map <string, int> usermap;
-map<string,int>::iterator it;
+map <string,int>::iterator it;
+int h=0;
+
+extern string myname;
 
 Client::Client(int portNum, const char* IP): portNum(portNum),IP(IP){
     //socket()
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
-        cout << "\nError establishing socket..." << endl;
+        cout << "  \nError establishing socket..." << endl;
         exit(1);
     }
-    cout << "\n=> Socket client has been created..." << endl;
+    cout << "  => Socket client has been created..." << endl;
 }
 
 void Client::clientinit(){
@@ -23,10 +26,13 @@ void Client::clientinit(){
 }
 
 void Client::clientconn(){
-    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0)
-        cout << "=> Connection to the server port number: " << portNum << endl;
+    if (connect(sockfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == 0){
+        cout << "  => Connection to the server port number: " << portNum << endl;
+        line();
+        cout<< "Users Online(type in @user to select your target, e.g. @tim): "<<endl;
+    }
     else{
-        cout<<"=>error connecting to server,please restart.\n";
+        cout<<"  => Error connecting to server,please restart.\n";
         close(sockfd);
         exit(1);
     }
@@ -56,21 +62,44 @@ void Client::str_send(int sockfd) {
         char buffer[bufsize];
        // cout << "Client: ";
         cin >> buffer;
+        string name(buffer+1);
+
         if(buffer[0]=='@'){
-            string name(buffer+1);
-            it = usermap.find(name);
-          //  if (it != usermap.end())
-            //    usermap.erase (it);
+            if (usermap.count(name)>0){
+                it = usermap.find(name);
+                h=it->second;
+                line();
+            }
+            else
+                h=0;
             continue;
         }
-        string message(buffer);
-        message = to_string(it->second) + message;
-        strcpy(buffer, message.c_str());
-        write(sockfd, buffer, bufsize);
-        if(buffer[1] == '#'){
+
+        if(buffer[0]=='!'){
+
+            it =usermap.find(myname);
+            h=it->second;
+            line();
+            cout<< "Users online(type in @user to select your target, e.g. @tim): "<<endl;
+            usermap.clear();
+        }
+
+        if(buffer[0] == '#'){
+            it =usermap.find(myname);
+            h=it->second;
+            string end(buffer);
+            end = to_string(h) + end;
+            strcpy(buffer, end.c_str());
+            write(sockfd, buffer, bufsize);
             cout << "thread_send is closed"<<endl;
             return;
         }
+        string message(buffer);
+        message = to_string(h) + message;
+        strcpy(buffer, message.c_str());
+        write(sockfd, buffer, bufsize);
+
+
     }   
 }
 
@@ -80,23 +109,18 @@ void Client::str_recieve(int sockfd) {
         read(sockfd, buffer, bufsize);
         int fd;
         //cout << "done reading" << endl;
-        if(buffer[0]=='*' && buffer[1]!='#'){
+        if(buffer[0]=='*' && buffer[2]!='#'){
             int fd=buffer[1]-'0';
             string name(buffer+3);
             usermap[name]=fd;
+            cout<<"User: "<<name<<" ID: "<<fd<<endl;
         }
-        if(buffer[0]!='*' && buffer[1]!='#'){
-            cout << "server: ";
+
+        if(buffer[0]!='*' && buffer[2]!='#'){
             cout << buffer << endl;
         }
-        if(buffer[1]=='!'){
-            cout<< "users online: "<<endl;
-            for(map<string, int >::iterator i=usermap.begin(); i!=usermap.end(); ++i)
-                cout<<"User: "<<i->first<<"  ID: "<<i->second<<endl;;
-            usermap.clear();
-            cout<<"Choose the user you want to communicate with(start with @, e.g. @Tim): ";
-        }
-        if(buffer[1]=='#') {
+
+        if(buffer[2]=='#') {
             close(sockfd);
             cout<<"thread_recieve is closed"<<endl;
             cout<<"client closed."<<endl;
@@ -113,7 +137,24 @@ void Client::login_info(string username){
 }
 
 
+void line(){
+      for(int i=0;i<60;i++)
+        cout<<'-';  
+    cout<<endl;
+}
 
-
+void header(){
+    for(int i=0;i<60;i++){
+        cout<<'-';
+    }
+    cout<<endl;
+    for(int i=0;i<23;i++)
+        cout<<' ';
+    cout<< "Messaging System \n";
+    cout<< "< Program developed by Jiabin Xiang, Pandong Zhang and Shan Wang > \n";
+    line();
+    cout<<"   =>Login...\n";
+    cout<<"   =>Username: ";
+}
 
 
