@@ -28,15 +28,16 @@ private:
     struct sockaddr_in server_addr, client_addr;
     socklen_t size;
 public:
-    Server(int portNum);
-    void server_addr_init();
-    void bind_listen();
-    int accept_client();
-    void recieve_client_list(int sockfd);
-    void send_client_list(int sockfd);
-    static void str_read(int sockfd); // string read
-    static void str_write(int sockfd); // string write
+    Server(int portNum);//constructor
+    void server_addr_init();//struct server_addr
+    void bind_listen(); //bind() & listen()
+    int accept_client(); //listen()
 };
+
+void recieve_client_list(int sockfd);
+void send_client_list(int sockfd);
+void str_read(int sockfd); // string read
+void str_write(int sockfd); // string write
 
 
 #endif

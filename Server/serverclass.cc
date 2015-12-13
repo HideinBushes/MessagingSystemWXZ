@@ -13,6 +13,7 @@ Server::Server(int portNum):portNum(portNum){
     }
     cout << "\nSocket server has been created..." << endl;
 }
+
 void Server::server_addr_init(){
     bzero(&server_addr, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
@@ -39,7 +40,17 @@ int Server::accept_client(){
     return connfd;
 }
 
-void Server::recieve_client_list(int sockfd) {
+
+
+
+
+
+
+//1.read name from client
+//2.push back to client list
+//3.show current clients(name and connfd)
+
+void recieve_client_list(int sockfd) {
     char buffer[bufsize];
     read(sockfd, buffer, bufsize);
     string name(buffer);
@@ -50,30 +61,33 @@ void Server::recieve_client_list(int sockfd) {
     }
 }
 
-void Server::send_client_list(int sockfd) {
+//1.send all clients' info to certain client as: (*)(connfd)(name)
+void send_client_list(int sockfd) {
     char buffer[bufsize];
     for (map<string,int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
         string info = '*' + to_string(itr->second) + itr->first;
         strcpy(buffer, info.c_str());
         write(sockfd, buffer, bufsize);
+        cout << "[send_client_list] info is sent: " << itr->first << " " << itr->second << endl;
     }
 }
 
-void Server::str_read(int sockfd) {
+//1.read from client
+//2.output queue
+//3.if buffer[1] == #, delete this client in client_list, and end thread.
+//4.if buffer[1] == @, insert queue for all clients that are exist.
+void str_read(int sockfd) {
     while(1){
         char buffer[bufsize];
-        read(sockfd, buffer, bufsize); //read()>=0 means client is not closed
-        rw.lock();
-        string re(buffer);
-        cout << "read:buffer:" << re << endl; ////////////
-        queue.push_back(re);
-        for(int i=0; i<queue.size(); i++) {  ///////////
-            cout << "read:queue[" << i << "]:" << queue[i] << endl;
-        }
-        rw.unlock();
-        
+        read(sockfd, buffer, bufsize);
+        string read;
+
+        //1.delete client in client_list
+        //2.end thread
         if (buffer[1] == '#') {
-            cout << "read: ready to quit" << endl;
+            read = to_string(sockfd) + buffer;
+            queue.push_back(read);
+            cout << "[str_read] recieve # Shutting Down read thread for this client!" << endl;
             for (map<string,int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
                 if (itr->second == sockfd) {
                     client_list.erase(itr);
@@ -81,10 +95,40 @@ void Server::str_read(int sockfd) {
             }
             return;
         }
+        
+        //without token ! & #
+        
+        rw.lock();
+        if(buffer[0] != '0') {
+            read = to_string(sockfd) + buffer;
+            cout << "[str_read] read from client:" << read << endl;
+            queue.push_back(read);
+            for(int i=0; i<queue.size(); i++) {
+                cout << "[str_read] queue[" << i << "]:" << queue[i] << endl;
+            }
+        }
+
+        else {
+            for (map<string, int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
+                buffer[0]= itr->second+'0';
+                read = to_string(sockfd) + buffer;
+                queue.push_back(read);
+            }
+            
+        }
+        rw.unlock();
+        
+        
+        
     }
 }
 
-void Server::str_write(int sockfd) {
+//1. read from queue
+//2. write to client
+//3. erase queue[0]
+//4. if buffer[1] == #, end thread
+//5. if buffer[1] == !, send client info
+void str_write(int sockfd) {
     while(1)
     {
         rw.lock();
@@ -92,23 +136,36 @@ void Server::str_write(int sockfd) {
         {
             char buffer[bufsize];
             strcpy(buffer, queue[0].c_str());
-            if((int)(buffer[0]-'0') == sockfd) {
-                cout << "\n[write get in critical: connfd: " << sockfd << "]" << endl;
-                cout << "write:connfd:" << sockfd << endl; ////////
-                for(int i=0; i<queue.size(); i++) {  ///////////
-                    cout << "write:before erase:queue[" << i << "]:" << queue[i] << endl;
-                }
-                cout << "write:buffer copied from queue[0]:" << buffer << endl;
+            //
+            if((int)(buffer[1]-'0') == sockfd) {
+                cout << "\n[str_write]: detected connfd: " << sockfd << "]" << endl;
+                cout << "[str_write]: message copied from queue[0]:" << buffer << endl;
                 queue.erase( queue.begin() );
-                write(sockfd, buffer, bufsize);
-                if (buffer[1] == '#') {
-                    cout << "write: ready to quit" << endl;
-                    close(sockfd);
-                    rw.unlock();
-                    return;
+                if (buffer[2] != '!') {
+                    if (buffer[2] == '#') {
+                        cout << "[str_write] recieve # Shutting Down write thread for this client!" << endl;
+                        write(sockfd, buffer, bufsize);
+                        close(sockfd);
+                        rw.unlock();
+                        return;
+                    }
+                    
+                    string w;
+                    for (map<string,int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
+                        if (itr->second == (int)(buffer[0]-'0') ) {
+                            w = itr->first + ':' + ' ' + (buffer+2);
+                            break;
+                        }
+                    }
+                    strcpy(buffer, w.c_str());
+                    write(sockfd, buffer, bufsize);
+
+                }
+                if (buffer[2] == '!') {
+                    cout << "[str_write] recieve ! send map" << endl;
+                    send_client_list(sockfd);
                 }
             }
-            cout << "[write get out critical: connfd: " << sockfd << "]\n" << endl;
         }
         rw.unlock();
     }
