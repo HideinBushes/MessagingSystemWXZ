@@ -7,7 +7,7 @@ To run this system, download the folder Server and folder Client, run the execut
 and then run the executable file "clientmain" in Client folder. 
 
 The server process runs in multi-thread, it can responce the request of serveral clients concurrently. To run this system, you should:
-  1. Run serermain
+  1. Run servermain
   2. Run clientmain to create each client process.
   3. Enter your username for each client.
   4. Enter ! to refresh the online client list.
