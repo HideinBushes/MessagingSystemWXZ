@@ -11,6 +11,8 @@ int main() {
     s1.server_addr_init();
     s1.bind_listen();
     
+
+    
     while(1) {
         connfd.push_back(s1.accept_client());
         cout << "connfd[" << i << "] = " << connfd.back() << endl;

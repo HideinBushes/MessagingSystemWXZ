@@ -16,6 +16,7 @@
 #include <string>
 #include <mutex>
 #include <map>
+#include <fstream>
 
 #define bufsize 1024
 using namespace std;

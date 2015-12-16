@@ -75,48 +75,82 @@ void send_client_list(int sockfd) {
 //1.read from client
 //2.output queue
 //3.if buffer[1] == #, delete this client in client_list, and end thread.
-//4.if buffer[1] == @, insert queue for all clients that are exist.
+//4.if buffer[0] == 0, insert queue for all clients that are exist.
 void str_read(int sockfd) {
     while(1){
         char buffer[bufsize];
         read(sockfd, buffer, bufsize);
-        string read;
+        string readin;
 
         //1.delete client in client_list
         //2.end thread
+        //rw.lock();
         if (buffer[1] == '#') {
-            read = to_string(sockfd) + buffer;
-            queue.push_back(read);
+            readin = to_string(sockfd) + buffer;
+            rw.lock();
+            queue.push_back(readin);
+            rw.unlock();
             cout << "[str_read] recieve # Shutting Down read thread for this client!" << endl;
+            rw.lock();
             for (map<string,int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
                 if (itr->second == sockfd) {
                     client_list.erase(itr);
                 }
             }
+            rw.unlock();
             return;
         }
         
         //without token ! & #
         
-        rw.lock();
         if(buffer[0] != '0') {
-            read = to_string(sockfd) + buffer;
-            cout << "[str_read] read from client:" << read << endl;
-            queue.push_back(read);
-            for(int i=0; i<queue.size(); i++) {
-                cout << "[str_read] queue[" << i << "]:" << queue[i] << endl;
+            if(buffer[1] == '&') {
+                rw.lock();
+                const char* filename = buffer+2;
+                cout << "filename: " << filename << endl;
+                
+                char buffer2[bufsize];
+                read(sockfd, buffer2, bufsize);
+                char* filesize = buffer2+1;
+                unsigned long size = atol(filesize);
+                cout << "filesize: " << size << endl;
+                
+                FILE* file;
+                file = fopen(filename, "wb");
+                
+                char* filebuffer = new char[size];
+                read(sockfd, filebuffer, size);
+                
+                fwrite (filebuffer, sizeof(char), size, file);
+                //cout << "filebuffer: " << filebuffer << endl;
+                fclose(file);
+                
+                delete [] filebuffer;
+                rw.unlock();
+
+            }
+            else { //buffer[1] != '&'
+                readin = to_string(sockfd) + buffer;
+                cout << "[str_read] read from client:" << readin << endl;
+                rw.lock();
+                queue.push_back(readin);
+                for(int i=0; i<queue.size(); i++) {
+                    cout << "[str_read] queue[" << i << "]:" << queue[i] << endl;
+                }
+                rw.unlock();
             }
         }
 
         else {
+            rw.lock();
             for (map<string, int>::iterator itr = client_list.begin(); itr != client_list.end(); ++itr) {
                 buffer[0]= itr->second+'0';
-                read = to_string(sockfd) + buffer;
-                queue.push_back(read);
+                readin = to_string(sockfd) + buffer;
+                queue.push_back(readin);
             }
-            
+            rw.unlock();
         }
-        rw.unlock();
+        //rw.unlock();
         
         
         
