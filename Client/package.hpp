@@ -16,6 +16,7 @@
 #include <string>
 #include <mutex>
 #include <map>
+#include <fstream>
 
 #define bufsize 1024
 //Client member function
@@ -41,6 +42,7 @@ public:
     static void str_send(int sockfd);
     static void str_recieve(int sockfd);
     void login_info(string username);
+
 };
 
 

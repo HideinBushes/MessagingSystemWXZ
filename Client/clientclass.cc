@@ -44,23 +44,10 @@ int Client::get_sockfd() {
 void Client::clientclose(){
     close(sockfd);
 }
-/*
-void Client::str_cli(){
-    //client write to socket
-    cout << "client: ";
-    cin >> buffer;
-    write(sockfd, buffer, bufsize);
-    //client read from socket
-    cout << "server: ";
-    read(sockfd, buffer, bufsize);
-    cout << buffer << " ";
-}
- */
 
 void Client::str_send(int sockfd) {
     while(1) {
         char buffer[bufsize];
-       // cout << "Client: ";
         cin >> buffer;
         string name(buffer+1);
 
@@ -70,8 +57,10 @@ void Client::str_send(int sockfd) {
                 h=it->second;
                 line();
             }
-            else
+            else{
                 h=0;
+                line();
+            }
             continue;
         }
 
@@ -94,6 +83,34 @@ void Client::str_send(int sockfd) {
             cout << "thread_send is closed"<<endl;
             return;
         }
+
+        if(buffer[0]=='&'){
+            string file(buffer);
+            file=to_string(h)+file;
+            strcpy(buffer, file.c_str());
+            write(sockfd,buffer,bufsize);
+           
+            const char* filename=buffer+2;
+            FILE *img=fopen(filename, "rb");
+            fseek(img, 0, SEEK_END);
+            unsigned long filesize = ftell(img);
+            //send filesize
+            string size=to_string(filesize);
+            size=to_string(h)+size;
+            strcpy(buffer, size.c_str());
+
+            write(sockfd,buffer,bufsize);
+
+            char* filebuffer=new char[filesize];
+            rewind(img);
+            fread(filebuffer, sizeof(char), filesize, img);
+            fclose (img); 
+            write(sockfd, filebuffer,filesize);
+            cout<<"File has been upload to the server!"<<endl;
+            delete [] filebuffer;
+            continue;
+        }
+
         string message(buffer);
         message = to_string(h) + message;
         strcpy(buffer, message.c_str());
@@ -135,6 +152,7 @@ void Client::login_info(string username){
     strcpy(buffer+1, username.c_str());
     write(sockfd, buffer, bufsize);
 }
+
 
 
 void line(){
