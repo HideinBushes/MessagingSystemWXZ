@@ -9,7 +9,7 @@ int main(){
 	line();
     int sockfd ;
       //username there is a map in server, map[string username, int sockfd
-    Client c1(1510, "155.246.84.58");
+    Client c1(1510, "155.246.45.82");
     c1.clientinit();
     c1.clientconn();
     sockfd = c1.get_sockfd();
