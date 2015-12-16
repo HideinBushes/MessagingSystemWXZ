@@ -1,3 +1,0 @@
-hello server
-
-I am a file from a client!!!!!

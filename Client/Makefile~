@@ -1,6 +1,0 @@
-clientmain: clientmain.o clientclass.o
-	g++ -o clientmain clientmain.o clientclass.o -std=c++11
-clientmain.o: clientmain.cc package.hpp
-	g++ -c clientmain.cc -std=c++11 -pthread
-clientclass.o: clientclass.cc package.hpp
-	g++ -c clientclass.cc -std=c++11
